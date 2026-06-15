@@ -24,7 +24,7 @@ jobs:
 
       - name: Install gomobile
         run: |
-          go install golang.org/x/mobile/cmd/gomobile@latest
+          go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20230531074452-ec5b8d0c3f18
           gomobile init
 
       - name: Build Go Framework for iOS
