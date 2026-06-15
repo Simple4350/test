@@ -11,10 +11,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 核心改变：不再限制 Go 版本，直接用最新的 Go 1.26
+      # 这样 gomobile 和 mobile 依赖的升级要求会被自然满足，不会再报错
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22.0'
+          go-version: '^1.26.0'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -24,19 +26,15 @@ jobs:
 
       - name: Install gomobile
         run: |
-          # 使用经查证真实存在的 2024 年 1 月版本，完美兼容 Go 1.22
-          go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20240112113735-6418e5e0e672
-          go install golang.org/x/mobile/cmd/gobind@v0.0.0-20240112113735-6418e5e0e672
+          go install golang.org/x/mobile/cmd/gomobile@latest
+          go install golang.org/x/mobile/cmd/gobind@latest
           gomobile init
 
       - name: Build Go Framework for iOS
         run: |
           cd core
-          # GOTOOLCHAIN=local 严禁 Go 偷偷下载新版本
-          # 强行拉取指定版本的 mobile 依赖，满足新版 gomobile 的检查
-          GOTOOLCHAIN=local go get golang.org/x/mobile@v0.0.0-20240112113735-6418e5e0e672
-          GOTOOLCHAIN=local gomobile bind -target=ios -o ../ios/Frameworks/Core.xcframework .
-          # 恢复 go.mod 和 go.sum，防止影响后续 Flutter 编译
+          go get golang.org/x/mobile
+          gomobile bind -target=ios -o ../ios/Frameworks/Core.xcframework .
           git checkout go.mod go.sum
           cd ..
 
@@ -47,7 +45,8 @@ jobs:
 
       - name: Fix Xcode and Generate iOS Plugins
         run: |
-          sudo xcode-select --switch /Applications/Xcode_15.2.app/Contents/Developer
+          # 修正：macos-14 环境下只有 Xcode 15.4
+          sudo xcode-select --switch /Applications/Xcode_15.4.app/Contents/Developer
           cd ios
           pod deintegrate || true
           rm Podfile || true
