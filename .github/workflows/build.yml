@@ -11,8 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 核心改变：不再限制 Go 版本，直接用最新的 Go 1.26
-      # 这样 gomobile 和 mobile 依赖的升级要求会被自然满足，不会再报错
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -43,19 +41,14 @@ jobs:
           flutter precache --ios
           flutter pub get
 
-      - name: Fix Xcode and Generate iOS Plugins
+      - name: Fix Xcode and Build IPA
         run: |
           sudo xcode-select --switch /Applications/Xcode_15.4.app/Contents/Developer
-          # 强制生成缺失的插件文件夹
-          flutter build ios --config-only --no-codesign
-          cd ios
-          pod deintegrate || true
-          rm Podfile || true
-          flutter pub get
-          cd ..
-
-      - name: Build iOS IPA (No Codesign)
-        run: |
+          # 核心修复：手动创建 Xcode 找不到的那个文件夹，解决死锁报错
+          mkdir -p ios/Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage
+          # 清除 Xcode SPM 缓存
+          rm -rf ~/Library/Caches/org.swift.swiftpm || true
+          # 直接一步编译打包，不再单独执行 --config-only
           flutter build ios --release --no-codesign
           mkdir -p build/ios/ipa/Payload
           cp -r build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
