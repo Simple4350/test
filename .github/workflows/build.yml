@@ -29,9 +29,9 @@ jobs:
       - name: Build Go Framework for iOS
         run: |
           cd core
+          go get -tool golang.org/x/mobile/cmd/gobind
           gomobile bind -target=ios -o ../ios/Frameworks/Core.xcframework .
           cd ..
-
       - name: Install Flutter Dependencies
         run: flutter pub get
 
