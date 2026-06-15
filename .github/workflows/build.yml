@@ -14,7 +14,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22.0' # 严格锁定1.22.0，防止自动升级到1.25导致报错
+          go-version: '1.22.0'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -24,13 +24,18 @@ jobs:
 
       - name: Install gomobile
         run: |
-          go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20230531074452-ec5b8d0c3f18
+          go install golang.org/x/mobile/cmd/gomobile@latest
+          go install golang.org/x/mobile/cmd/gobind@latest
           gomobile init
 
       - name: Build Go Framework for iOS
         run: |
           cd core
+          # 核心修复：临时满足新版 gomobile 的依赖检查，编译后恢复原样
+          go get golang.org/x/mobile
           gomobile bind -target=ios -o ../ios/Frameworks/Core.xcframework .
+          # 恢复 go.mod 和 go.sum，防止影响后续 Flutter 解析
+          git checkout go.mod go.sum
           cd ..
 
       - name: Install Flutter Dependencies
