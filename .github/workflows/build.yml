@@ -44,7 +44,7 @@ jobs:
           zip -r ../../torrent_app.ipa Payload
 
       - name: Upload IPA Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: torrent-app-ipa
           path: build/torrent_app.ipa
