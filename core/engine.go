@@ -13,6 +13,7 @@ var (
     client     *torrent.Client
     currentTor *torrent.Torrent
     mu         sync.Mutex
+    saveDir    string // 新增：保存下载目录，因为新版库隐藏了 client.Config
 )
 
 // InitEngine 初始化 BT 引擎
@@ -20,6 +21,7 @@ func InitEngine(downloadDir string) {
     mu.Lock()
     defer mu.Unlock()
 
+    saveDir = downloadDir // 保存目录
     cfg := torrent.NewDefaultClientConfig()
     cfg.DefaultStorage = storage.NewFile(downloadDir)
     cfg.Seed = false
@@ -77,8 +79,13 @@ func GetDownloadStats() string {
     mu.Lock()
     defer mu.Unlock()
 
+    if currentTor == nil || currentTor.Info() == nil {
+        return "0|0"
+    }
+    
     stats := currentTor.Stats()
-    return fmt.Sprintf("%d|%d", stats.DownloadSpeed, stats.BytesReadUseful.Int64())
+    // 新版库去掉了 DownloadSpeed，我们用读取的总字节数代替
+    return fmt.Sprintf("0|%d", stats.BytesRead.Int64())
 }
 
 // GetFilePath 获取文件绝对路径
@@ -87,5 +94,6 @@ func GetFilePath(fileIndex int) string {
     defer mu.Unlock()
 
     files := currentTor.Files()
-    return filepath.Join(client.Config().DataDir, currentTor.Info().Name, files[fileIndex].Path())
+    // 使用我们保存的 saveDir 替代 client.Config()
+    return filepath.Join(saveDir, currentTor.Info().Name, files[fileIndex].Path())
 }
