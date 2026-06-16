@@ -45,12 +45,34 @@ jobs:
         run: |
           sudo xcode-select --switch /Applications/Xcode_15.4.app/Contents/Developer
           
-          # 核心终极修复：在 Xcode 项目中彻底禁用 Swift Package Manager
-          /usr/libexec/PlistBuddy -c "Delete :objects::packageReferences" ios/Runner.xcodeproj/project.pbxproj || true
-          sed -i '' 's/packageProductDependencies = (/packageProductDependencies = (/g; s/.*FlutterGeneratedPluginSwiftPackage.*/ /g' ios/Runner.xcodeproj/project.pbxproj || true
-          rm -rf ios/Flutter/ephemeral/Packages || true
+          cd ios
           
-          # 直接一步编译打包
+          # 强制回退到 CocoaPods 模式，彻底抛弃 SPM
+          # 1. 创建一个标准的 Podfile
+          cat > Podfile <<'EOF'
+          # Uncomment the next line to define a global platform for your project
+          platform :ios, '13.0'
+          
+          target 'Runner' do
+            # Comment the next line if you don't want to use dynamic frameworks
+            use_frameworks!
+          
+            # Pods for Runner
+            flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+          end
+          
+          post_install do |installer|
+            installer.pods_project.targets.each do |target|
+              flutter_additional_ios_build_settings(target)
+            end
+          end
+          EOF
+          
+          # 2. 执行 pod install 安装插件依赖
+          pod install --repo-update
+          cd ..
+          
+          # 3. 直接编译打包
           flutter build ios --release --no-codesign
           mkdir -p build/ios/ipa/Payload
           cp -r build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
