@@ -2,11 +2,9 @@ workflows:
   ios-workflow:
     name: iOS Release
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.example.torrentApp
+      # 删掉了 ios_signing 模块，不需要签名！
       flutter: stable
-      xcode: latest
+      xcode: "15.4" # 锁死 Xcode 15.4
     scripts:
       - name: Set up local properties
         script: echo "flutter.minSdkVersion=21" > "$CM_BUILD_DIR/android/local.properties"
@@ -26,6 +24,7 @@ workflows:
           cd ..
       - name: Build iOS
         script: |
+          # 明确告诉 Flutter 不签名
           flutter build ios --release --no-codesign
           mkdir -p build/ios/ipa/Payload
           cp -r build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
