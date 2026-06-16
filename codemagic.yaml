@@ -1,0 +1,35 @@
+workflows:
+  ios-workflow:
+    name: iOS Release
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.example.torrentApp
+      flutter: stable
+      xcode: latest
+    scripts:
+      - name: Set up local properties
+        script: echo "flutter.minSdkVersion=21" > "$CM_BUILD_DIR/android/local.properties"
+      - name: Get Flutter packages
+        script: flutter packages pub get
+      - name: Install Go and gomobile
+        script: |
+          brew install go
+          go install golang.org/x/mobile/cmd/gomobile@latest
+          go install golang.org/x/mobile/cmd/gobind@latest
+          gomobile init
+      - name: Build Go Framework
+        script: |
+          cd core
+          go get golang.org/x/mobile
+          gomobile bind -target=ios -o ../ios/Frameworks/Core.xcframework .
+          cd ..
+      - name: Build iOS
+        script: |
+          flutter build ios --release --no-codesign
+          mkdir -p build/ios/ipa/Payload
+          cp -r build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
+          cd build/ios/ipa
+          zip -r ../../torrent_app.ipa Payload
+    artifacts:
+      - build/torrent_app.ipa

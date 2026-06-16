@@ -46,38 +46,15 @@ jobs:
           sudo xcode-select --switch /Applications/Xcode_15.4.app/Contents/Developer
           
           cd ios
+          # 核心修复：先删掉可能残留的坏 Podfile，然后用 Flutter 命令自动生成完美的 Podfile
+          rm -f Podfile
+          flutter pub get
           
-          # 强制回退到 CocoaPods 模式，彻底抛弃 SPM
-          # 1. 创建一个标准的 Podfile
-          cat > Podfile <<'EOF'
-          # 新增：引入 Flutter 的 Pod 配置模块
-          require File.expand_path(File.join('..', 'Flutter', 'PodfileHelper.rb'), __FILE__)
-          require File.expand_path(File.join('..', 'Flutter', 'Generated', 'xcode_backend.rb'), __FILE__)
-          
-          # Uncomment the next line to define a global platform for your project
-          # Uncomment the next line to define a global platform for your project
-          platform :ios, '13.0'
-          
-          target 'Runner' do
-            # Comment the next line if you don't want to use dynamic frameworks
-            use_frameworks!
-          
-            # Pods for Runner
-            flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-          end
-          
-          post_install do |installer|
-            installer.pods_project.targets.each do |target|
-              flutter_additional_ios_build_settings(target)
-            end
-          end
-          EOF
-          
-          # 2. 执行 pod install 安装插件依赖
-          pod install --repo-update
+          # 使用 pod install 安装依赖
+          pod install
           cd ..
           
-          # 3. 直接编译打包
+          # 直接编译打包
           flutter build ios --release --no-codesign
           mkdir -p build/ios/ipa/Payload
           cp -r build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
