@@ -50,6 +50,11 @@ jobs:
           # 强制回退到 CocoaPods 模式，彻底抛弃 SPM
           # 1. 创建一个标准的 Podfile
           cat > Podfile <<'EOF'
+          # 新增：引入 Flutter 的 Pod 配置模块
+          require File.expand_path(File.join('..', 'Flutter', 'PodfileHelper.rb'), __FILE__)
+          require File.expand_path(File.join('..', 'Flutter', 'Generated', 'xcode_backend.rb'), __FILE__)
+          
+          # Uncomment the next line to define a global platform for your project
           # Uncomment the next line to define a global platform for your project
           platform :ios, '13.0'
           
